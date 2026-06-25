@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple Chat</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+    }
+
+    #chat {
+      border: 1px solid #ccc;
+      height: 300px;
+      overflow-y: auto;
+      padding: 10px;
+      margin-top: 10px;
+    }
+
+    input {
+      margin: 5px 0;
+      width: 300px;
+      padding: 5px;
+    }
+
+    button {
+      margin-right: 5px;
+      padding: 5px 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Simple Chat</h2>
+
+<input id="token" placeholder="JWT Token"><br>
+<input id="receiver" placeholder="Receiver Email"><br>
+<input id="message" placeholder="Message"><br>
+
+<button onclick="connect()">Connect</button>
+<button onclick="sendMessage()">Send</button>
+
+<div id="chat"></div>
+
+<script>
+
+  let stompClient = null;
+
+  window.connect = function () {
+
+    console.log("CONNECT CLICKED");
+
+    const token = document.getElementById("token").value;
+
+    if (!token) {
+      console.log("Token is empty");
+      return;
+    }
+
+    const socket = new SockJS("http://localhost:8080/ws");
+
+    stompClient = Stomp.over(socket);
+
+    stompClient.connect(
+      {
+        Authorization: "Bearer " + token
+      },
+      function (frame) {
+
+        console.log("CONNECTED:", frame);
+
+        stompClient.subscribe("/user/queue/messages", function (msg) {
+
+          const message = JSON.parse(msg.body);
+
+          console.log("MESSAGE RECEIVED:", message);
+
+          document.getElementById("chat").innerHTML +=
+            "<p><b>" + message.senderEmail + ":</b> " + message.content + "</p>";
+        });
+      },
+      function (error) {
+        console.log("ERROR:", error);
+      }
+    );
+  };
+
+  window.sendMessage = function () {
+
+    console.log("SEND CLICKED");
+
+    const receiver = document.getElementById("receiver").value;
+    const content = document.getElementById("message").value;
+
+    if (!stompClient) {
+      console.log("Not connected");
+      return;
+    }
+
+    if (!receiver || !content) {
+      console.log("Empty fields");
+      return;
+    }
+
+    stompClient.send("/app/chat.send", {}, JSON.stringify({
+      receiverEmail: receiver,
+      content: content
+    }));
+
+    console.log("MESSAGE SENT");
+  };
+
+</script>
+
+</body>
+</html>
