@@ -3,7 +3,9 @@ package org.example.chatauth.controller;
 import lombok.RequiredArgsConstructor;
 import org.example.chatauth.dto.ChatRequest;
 import org.example.chatauth.entity.ChatMessage;
+import org.example.chatauth.entity.Conversation;
 import org.example.chatauth.repository.ChatMessageRepository;
+import org.example.chatauth.service.ConversationService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
@@ -15,32 +17,42 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class ChatController {
 
-    private final ChatMessageRepository repository;
+    private final ChatMessageRepository messageRepository;
+    private final ConversationService conversationService;
     private final SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/chat.send")
     public void send(ChatRequest request, Principal principal) {
 
-        // 1. کنترل امنیت پایه
         if (principal == null) {
             throw new RuntimeException("User not authenticated");
         }
 
-        String senderEmail = principal.getName();
+        String sender = principal.getName();
+        String receiver = request.receiverEmail();
+
+        // 1. گرفتن یا ساخت conversation
+        Conversation conversation =
+            conversationService.getOrCreate(sender, receiver);
 
         // 2. ساخت پیام
         ChatMessage message = new ChatMessage();
-        message.setSenderEmail(senderEmail);
-        message.setReceiverEmail(request.receiverEmail());
+        message.setConversationId(conversation.getId());
+        message.setSenderEmail(sender);
+        message.setReceiverEmail(receiver);
         message.setContent(request.content());
         message.setTimestamp(LocalDateTime.now());
 
-        // 3. ذخیره در دیتابیس
-        repository.save(message);
+        // 3. ذخیره پیام در دیتابیس
+        messageRepository.save(message);
 
-        // 4. ارسال پیام به کاربر مقصد
+        // 4. آپدیت last message conversation (برای inbox)
+        conversation.setLastMessageTime(LocalDateTime.now());
+        conversationService.save(conversation);
+
+        // 5. ارسال real-time به گیرنده
         messagingTemplate.convertAndSendToUser(
-            request.receiverEmail(),
+            receiver,
             "/queue/messages",
             message
         );

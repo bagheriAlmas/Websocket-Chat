@@ -10,19 +10,15 @@ import java.time.LocalDateTime;
 
 @Entity
 @Data
-public class ChatMessage {
+public class Conversation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long conversationId;
+    private String user1;
 
-    private String senderEmail;
+    private String user2;
 
-    private String receiverEmail;
-
-    private String content;
-
-    private LocalDateTime timestamp;
+    private LocalDateTime lastMessageTime;
 }
