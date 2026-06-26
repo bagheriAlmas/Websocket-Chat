@@ -50,11 +50,8 @@ public class ChatController {
         conversation.setLastMessageTime(LocalDateTime.now());
         conversationService.save(conversation);
 
-        // 5. ارسال real-time به گیرنده
-        messagingTemplate.convertAndSendToUser(
-            receiver,
-            "/queue/messages",
-            message
-        );
+        // 5. ارسال real-time به گیرنده و فرستنده
+        messagingTemplate.convertAndSendToUser(receiver, "/queue/messages", message);
+        messagingTemplate.convertAndSendToUser(sender, "/queue/messages", message);
     }
 }
