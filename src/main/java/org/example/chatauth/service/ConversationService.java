@@ -32,8 +32,7 @@ public class ConversationService {
 
     public List<ConversationDto> getUserChats(String email) {
 
-        List<Conversation> conversations =
-            repository.findAllByUser(email);
+        List<Conversation> conversations = repository.findAllByUser(email);
 
         return conversations.stream().map(c -> {
 
@@ -48,6 +47,8 @@ public class ConversationService {
 
             // گرفتن آخرین پیام (فعلاً ساده فرضی)
             dto.setLastMessage("..."); // بعداً از Message table میگیری
+            dto.setConversationId(c.getId());
+            dto.setLastMessageTime(c.getLastMessageTime());
 
             return dto;
 
