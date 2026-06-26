@@ -9,6 +9,11 @@ function loadHistory() {
 
   const conversationId = localStorage.getItem("conversationId");
 
+  if (!conversationId) {
+    console.error("conversationId missing");
+    return;
+  }
+
   fetch(API + "/api/chat/" + conversationId, {
     headers: authHeaders()
   })
@@ -18,29 +23,16 @@ function loadHistory() {
       const chat = document.getElementById("chat");
       chat.innerHTML = "";
 
-      data.forEach(m => {
-
-        const div = document.createElement("div");
-
-        if (m.senderEmail === getEmailFromToken()) {
-          div.className = "msg-me";
-        } else {
-          div.className = "msg-other";
-        }
-
-        div.innerText = m.content;
-
-        chat.appendChild(div);
-      });
+      data.forEach(m => addMessage(m));
 
       chat.scrollTop = chat.scrollHeight;
-    });
+    })
+    .catch(err => console.error("loadHistory error:", err));
 }
 
 function connect() {
 
   const socket = new SockJS(API + "/ws");
-
   stompClient = Stomp.over(socket);
 
   stompClient.connect(
@@ -50,7 +42,6 @@ function connect() {
       stompClient.subscribe("/user/queue/messages", function (msg) {
 
         const m = JSON.parse(msg.body);
-
         addMessage(m);
       });
     }
@@ -62,24 +53,25 @@ function send() {
   const receiver = localStorage.getItem("receiverEmail");
   const conversationId = localStorage.getItem("conversationId");
 
+  const content = msg.value.trim();
+
   if (!receiver) {
-    console.error("Receiver is missing!");
+    alert("Receiver is missing!");
     return;
   }
+
+  if (!conversationId) {
+    alert("Conversation is missing!");
+    return;
+  }
+
+  if (!content) return;
 
   const message = {
     receiverEmail: receiver,
-    content: msg.value,
+    content: content,
     conversationId: conversationId
   };
-
-  console.log("receiver from storage:", localStorage.getItem("receiverEmail"));
-  console.log(localStorage)
-
-  if (!receiver) {
-    alert("No receiver selected! Go back to conversations.");
-    return;
-  }
 
   stompClient.send("/app/chat.send", {}, JSON.stringify(message));
 
@@ -88,9 +80,11 @@ function send() {
 
 function addMessage(m) {
 
+  const me = getEmailFromToken();
+
   const div = document.createElement("div");
 
-  if (m.senderEmail === getEmailFromToken()) {
+  if (m.senderEmail === me) {
     div.className = "msg-me";
   } else {
     div.className = "msg-other";
@@ -98,10 +92,10 @@ function addMessage(m) {
 
   div.innerText = m.content;
 
-  document.getElementById("chat").appendChild(div);
+  const chat = document.getElementById("chat");
+  chat.appendChild(div);
 
-  document.getElementById("chat").scrollTop =
-    document.getElementById("chat").scrollHeight;
+  chat.scrollTop = chat.scrollHeight;
 }
 
 function getEmailFromToken() {

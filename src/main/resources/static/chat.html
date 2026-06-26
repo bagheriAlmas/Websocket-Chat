@@ -1,11 +1,35 @@
-<div class="container">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chat</title>
 
-  <h3>Chat</h3>
+  <link rel="stylesheet" href="css/chat.css">
 
-  <div id="chat" class="chat-box"></div>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
 
-  <input id="msg" placeholder="Message">
-  <button onclick="send()">Send</button>
+<body>
+
+<div class="app">
+
+  <!-- Header -->
+  <div class="chat-header">
+    <div class="avatar"></div>
+    <div class="header-info">
+      <div id="chatName">Chat</div>
+      <div class="status">online</div>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div id="chat" class="chat-body"></div>
+
+  <!-- Input -->
+  <div class="chat-input">
+    <input id="msg" placeholder="Write a message..." />
+    <button onclick="send()">➤</button>
+  </div>
 
 </div>
 
@@ -14,3 +38,6 @@
 
 <script src="js/api.js"></script>
 <script src="js/chat.js"></script>
+
+</body>
+</html>
